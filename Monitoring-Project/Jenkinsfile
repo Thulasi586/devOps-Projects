@@ -24,4 +24,7 @@ node {
             sh 'docker build -t monitoring-app:latest .'
         }
     }
+    stage('Trivy Security Scan') {
+        sh 'trivy image --severity HIGH,CRITICAL --exit-code 1 monitoring-app:latest'
+    }
 }
