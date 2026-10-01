@@ -1,14 +1,21 @@
-FROM node:24.21.0-alpine3.24
+FROM node:24.21.0-alpine3.24 AS builder
 
 WORKDIR /app
-
-RUN npm install -g npm@12.1.0
 
 COPY package*.json ./
 
 RUN npm install
 
 COPY server.js ./
+
+
+FROM node:24.21.0-alpine3.24 AS runtime
+
+WORKDIR /app
+
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/server.js ./
 
 USER node
 
