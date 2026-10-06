@@ -23,6 +23,17 @@ node {
             waitForQualityGate abortPipeline: true
         }
     }
+    stage('OWASP FS Scan') {
+        dir('Monitoring-Project') {
+            dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP-Check'
+            dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+        }
+    }
+    stage('Trivy FS Scan') {
+        dir('Monitoring-Project') {
+            sh 'trivy fs . > trivyfs.json'
+        }
+    }
     stage('Docker Build') {
         dir('Monitoring-Project/app') {
             sh 'docker build -t monitoring-app:latest .'
