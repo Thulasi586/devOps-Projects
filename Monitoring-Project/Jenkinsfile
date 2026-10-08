@@ -25,7 +25,10 @@ node {
     }
     stage('OWASP FS Scan') {
         dir('Monitoring-Project') {
-            dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP-Check'
+            dependencyCheck nvdCredentialsId: 'NVD_API_KEY',
+                additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit',
+                odcInstallation: 'DP-Check'
+            
             dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
         }
     }
