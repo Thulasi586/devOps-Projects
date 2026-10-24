@@ -42,6 +42,26 @@ node {
             sh 'docker build -t monitoring-app:latest .'
         }
     }
+    stage('Docker Hub Push') {
+        withCredentials([usernamePassword(
+            credentialsId: 'dockerhub-creds',
+            usernameVariable: 'DOCKERHUB_USER',
+            passwordVariable: 'DOCKERHUB_TOKEN'
+        )]) {
+            sh '''
+            set -eu
+            echo "$DOCKERHUB_TOKEN" | docker login \
+            -u "$DOCKERHUB_USER" --password-stdin
+            
+            docker tag monitoring-app:latest \
+            "$DOCKERHUB_USER/monitoring-app:latest"
+            
+            docker push "$DOCKERHUB_USER/monitoring-app:latest"
+            
+            docker logout
+            '''
+        }
+    }
     stage('Trivy Security Scan') {
         sh 'trivy image --severity HIGH,CRITICAL --exit-code 1 monitoring-app:latest'
     }
