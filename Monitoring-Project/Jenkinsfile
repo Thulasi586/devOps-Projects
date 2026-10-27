@@ -23,9 +23,43 @@ node {
             waitForQualityGate abortPipeline: true
         }
     }
+    stage('OWASP FS Scan') {
+        dir('Monitoring-Project') {
+            dependencyCheck nvdCredentialsId: 'NVD_API_KEY',
+                additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit',
+                odcInstallation: 'DP-Check'
+            
+            dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+        }
+    }
+    stage('Trivy FS Scan') {
+        dir('Monitoring-Project') {
+            sh 'trivy fs . > trivyfs.json'
+        }
+    }
     stage('Docker Build') {
         dir('Monitoring-Project/app') {
             sh 'docker build -t monitoring-app:latest .'
+        }
+    }
+    stage('Docker Hub Push') {
+        withCredentials([usernamePassword(
+            credentialsId: 'dockerhub-creds',
+            usernameVariable: 'DOCKERHUB_USER',
+            passwordVariable: 'DOCKERHUB_TOKEN'
+        )]) {
+            sh '''
+            set -eu
+            echo "$DOCKERHUB_TOKEN" | docker login \
+            -u "$DOCKERHUB_USER" --password-stdin
+            
+            docker tag monitoring-app:latest \
+            "$DOCKERHUB_USER/monitoring-app:latest"
+            
+            docker push "$DOCKERHUB_USER/monitoring-app:latest"
+            
+            docker logout
+            '''
         }
     }
     stage('Trivy Security Scan') {
